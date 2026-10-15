@@ -318,7 +318,8 @@ def footage(a):
         pct = cover(W, H, pr["w"], pr["h"])
         o = bridge(fill(PLACE, MTR=mtr, MTRN=mtr + 1, TTR=ttr, TTRN=ttr + 1, CODE=mcode, PATH=path.replace("\\", "/"), SRC=pr["dur"], PCT=pct, KB="true" if pr["still"] else "false"))
         if o.startswith("OK"):
-            man["placed"].append(dict(track=ttr, name=os.path.basename(path), st=mk[code][1])); rep[code] = ("WARN " if ("SHORT" in o or notes) else "") + o + (" | " + "; ".join(notes) if notes else "")
+            if "ALREADY" not in o: man["placed"].append(dict(track=ttr, name=os.path.basename(path), st=mk[code][1]))
+            rep[code] = ("WARN " if ("SHORT" in o or notes) else "") + o + (" | " + "; ".join(notes) if notes else "")
         else:
             rep[code] = "ERR place: " + o[:200] + " (file ada di " + path + ")"
         json.dump(man, open(a.manifest, "w"), indent=1)
