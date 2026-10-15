@@ -4,6 +4,8 @@ Kit ini bikin Hermes di komputermu bisa: download footage Envato/arsip yang kamu
 
 Dipakai oleh: AGIL, ZULFIKAR, SULTAN, REPI.
 
+**Paling cepat:** buka `PROMPT_HERMES.md`, copy prompt-nya ke Hermes-mu. Hermes akan memasang dan menjalankan semuanya, dan berhenti saat butuh kamu.
+
 ## Yang harus sudah ada
 
 - Windows, Premiere Pro (2024 ke atas), Chrome
