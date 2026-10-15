@@ -1,0 +1,73 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Hermes Bridge</title>
+<style>
+body{background:#1d1d1d;color:#ddd;font:12px Segoe UI,Helvetica,sans-serif;margin:10px}
+#st{font-weight:600}#st.on{color:#7ad47a}#st.err{color:#ff7a7a}#st.busy{color:#e8c46a}
+#meta{color:#888;font-size:11px;margin-top:4px}
+#log{margin-top:8px;height:160px;overflow:auto;font:11px Consolas,monospace;color:#aaa;white-space:pre-wrap}
+</style></head>
+<body><div>Hermes Bridge · <span id="st">starting…</span></div><div id="meta"></div><div id="log"></div>
+<script>
+(function(){
+  var VERSION='1.0.1';
+  var st=document.getElementById('st'), meta=document.getElementById('meta'), logEl=document.getElementById('log');
+  function log(m){ var t=new Date().toTimeString().slice(0,8); logEl.textContent=(t+'  '+m+'\n'+logEl.textContent).slice(0,6000); }
+  function state(text,cls){ st.textContent=text; st.className=cls; }
+  var fs, path, os;
+  try{ fs=require('fs'); path=require('path'); os=require('os'); }catch(e){ state('Node.js disabled','err'); return; }
+
+  // %LOCALAPPDATA%\hermes\bridge\premiere  (macOS: ~/Library/Application Support/hermes/bridge/premiere)
+  var root = process.platform==='win32'
+    ? path.join(process.env.LOCALAPPDATA || path.join(os.homedir(),'AppData','Local'),'hermes','bridge','premiere')
+    : path.join(os.homedir(),'Library','Application Support','hermes','bridge','premiere');
+  var inbox=path.join(root,'inbox'), outbox=path.join(root,'outbox');
+  [root,inbox,outbox].forEach(function(d){ try{ fs.mkdirSync(d,{recursive:true}); }catch(e){} });
+
+  var busy=false, jobs=0, current=null, startedAt=0;
+  function heartbeat(){
+    try{
+      fs.writeFileSync(path.join(root,'heartbeat.json'), JSON.stringify({
+        t:Date.now(), pid:process.pid, version:VERSION, busy:busy, job:current,
+        busy_ms: busy ? Date.now()-startedAt : 0, jobs:jobs
+      }));
+      fs.writeFileSync(path.join(root,'panel.log'), logEl.textContent || '');
+    }catch(e){}
+  }
+  var TIMEOUT_MS=120000, seq=0;
+  function finish(f,res,mySeq){
+    if(mySeq!==seq) return;                       // late callback of a job already timed out
+    var ms=Date.now()-startedAt, out=path.join(outbox,f.replace(/\.jsx$/,'.txt'));
+    try{ fs.writeFileSync(out+'.tmp', String(res)); fs.renameSync(out+'.tmp', out); }catch(e){ log('write failed: '+e); }
+    jobs++; busy=false; current=null; seq++; state('connected','on');
+    meta.textContent=jobs+' job(s) · last '+ms+' ms';
+    log('done '+f+' ('+ms+' ms) -> '+String(res).slice(0,90));
+  }
+  function tick(){
+    heartbeat();
+    try {
+      var reloadFile = path.join(root, 'reload.now');
+      if (fs.existsSync(reloadFile)) {
+        fs.unlinkSync(reloadFile);
+        window.location.reload();
+        return;
+      }
+    }catch(e){}
+    if(busy && Date.now()-startedAt>TIMEOUT_MS){ log('TIMEOUT '+current); finish(current,'ERR: timeout after '+TIMEOUT_MS+' ms (host did not answer)',seq); return; }
+    if(busy) return;
+    var files;
+    try{ files=fs.readdirSync(inbox).filter(function(f){ return /\.jsx$/.test(f) && f.charAt(0)!=='.'; }).sort(); }catch(e){ return; }
+    if(!files.length) return;
+    var f=files[0], src=path.join(inbox,f), code;
+    try{ code=fs.readFileSync(src,'utf8'); fs.unlinkSync(src); }catch(e){ return; }
+    busy=true; current=f; startedAt=Date.now(); state('running','busy'); log('run  '+f);
+    // Evaluate inside a function; return the last expression as a string, errors as "ERR: ... (line N)".
+    var wrapped='(function(){ try{ var __r = eval('+JSON.stringify(code)+'); return (__r===undefined)?"undefined":String(__r); }'+
+                'catch(__e){ return "ERR: "+__e.toString()+" (line "+__e.line+")"; } })()';
+    var mySeq=seq;
+    window.__adobe_cep__.evalScript(wrapped, function(res){ finish(f,res,mySeq); });
+  }
+  setInterval(tick,150); heartbeat();
+  state('connected','on');
+  meta.textContent='v'+VERSION+' · '+root;
+  log('watching '+inbox);
+})();
+</script></body></html>

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+ingest_report.json
+ingest_manifest.json
+*.mov
+*.mp4
+FOOTAGE/
+.env
