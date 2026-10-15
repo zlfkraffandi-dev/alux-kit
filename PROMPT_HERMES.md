@@ -50,7 +50,7 @@ TAHAP 5 - CEK KONEKSI (read-only)
 Nama sequence harus "PROJECT 5 - HOW BIG OIL ACTUALLY WORKS". Kalau "NONE", timeout, atau "not alive": ikuti bagian "Kalau macet" di README.md, jangan kirim job berulang. Laporkan hasil keempatnya.
 
 Di tahap 6 dan 7, "ingest.py" berarti:
-  python "%LOCALAPPDATA%\hermes\skills\productivitylux-pick-ingest\scripts\ingest.py"
+  python "%LOCALAPPDATA%\hermes\skills\productivity\alux-pick-ingest\scripts\ingest.py"
 
 TAHAP 6 - FOOTAGE (dengan folder hasil unzip EP005_PILIH_FOOTAGE_<NAMAMU>.zip)
 Tanyakan path folder itu. Pastikan di dalamnya ada full_catalog.json dan pilihan_<NAMAMU>.json.
